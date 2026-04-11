@@ -1,0 +1,289 @@
+
+BackBack to General Coding
+Week 3
+Using APIs
+Welcome to week 3 of resolution coding!! Now that you know basic HTML and JavaScript, we are ready to start learning how to use APIs!
+
+If you need help at any point, feel free to ask in the #resolution-coding slack channel, or email me at nico@resolution.hackclub.com.
+
+What's an API
+Right now you may be wondering, "What IS an API?". API stands for Application Programming Interface. APIs are the root of almost all apps and websites. For example, when programming for Android and IOS, you use an API to communicate with the devices firmware and ask for things such as battery life or location. In our case, we will be using REST APIs. REST (Representational State Transfer) is the most widely used API architecture for web services. To use a REST API, you simply send a request to an endpoint and it will respond with a JSON response.
+
+Examples of different uses for REST APIs:
+
+Weather forecast
+Photos from space
+Cat facts
+JSON Example:
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "age": 30,
+  "isEmployee": true
+}
+The project
+For this example, I am going to be showing you how to make a homepage for your browser.
+
+Features:
+
+Photo of the day from NASA
+Time
+Local weather for user
+Example image
+
+Background
+The first feature we are going to work on is fetching a new daily background image using the APOD (Astronomy Picture of the Day) API from NASA. I recommend signing up for an API key here so you don't get rate limited while testing.
+
+WARNING, there is no safe way to use API keys in plain HTML, CSS, and JS. The client (user) can open inspect and see all code. In this case, I have decided to make my API key public because it is a free API without access to any privileged information. EXPOSE API KEYS AT YOUR OWN RISK
+
+We are going to start by creating a normal HTML template and linking CSS and JS.
+
+<!doctype html>
+<html>
+  <head>
+    <title>Really cool thing!</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+
+  <body>
+    <!-- We will put our background image here -->
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
+Now that we have our HTML laid out, we are going to add a div to hold our background image. You may ask why we are using a div instead of a img element, this is because a div will let us crop the image if it doesn't fit the users screen by default.
+
+<div id="background">
+  <p>STUFF CAN GO HERE</p>
+</div>
+Now before we write the JS to pull the image, we need to add some CSS to crop the image to the screen size:
+
+#background {
+  width: 100vw;
+  height: 100vh;
+  background-position: center;
+  background-size: cover;
+  text-align: right;
+  display: flow-root;
+}
+
+html,
+body,
+p {
+  margin: 0;
+  padding: 0;
+}
+
+p {
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+}
+Now the HTML and CSS is ready for us to pull and set the background image from the NASA API! To do this, we should start by writing a function that calls the NASA API and returns the url to the image.
+
+You may ask why can't we just put the api into the image URL? We can't do that because the NASA API responds with more than just the image URL. It sends the title, description, copyright data, url, and more.
+
+Example of response returned by NASA API
+{
+ copyright: "Juan Carlos Casado",
+ date: "2026-03-20",
+ explanation: "The defining astronomical moment of the equinox today is at 14:46 UTC (March 20). That's when the Sun crosses the celestial equator moving north in its yearly journey through planet Earth's sky, marking the beginning of spring for our fair planet in the northern hemisphere and fall in the southern hemisphere.  Then, day and night are nearly equal around the globe. In fact, both day and nighttime exposures from a spring equinox at the Observatorio del Teide in Tenerife, Canary Islands, Spain, are used in this composited skyscape. Over 1,000 images were taken with a fisheye lens and merged in the ambitious equinox project. The apparent motion of the Sun setting along the celestial equator on the equinox date follows the bright linear, diagonal track from the sequence of daytime exposures taken over 6 hours. After sunset, nighttime exposures recorded startrails, with the celestial equator as a linear track and concentric arcs circling the north celestial pole near Polaris at upper right and the south celestial pole beyond the lower left edge (and below the Teide horizon). The foreground includes the distant Teide volcano peak and the observatory's pyramid-shaped solar laboratory building.",
+ hdurl: "https://apod.nasa.gov/apod/image/2603/equinox-3k-jcc.jpg",
+ media_type: "image",
+ service_version: "v1",
+ title: "Spring Equinox at Teide Observatory",
+ url: "https://apod.nasa.gov/apod/image/2603/equinox-3k-jcc_1087c.jpg"
+}
+When writing a function that calls an API, you need to use async, this allows the function to run alongside your other code, instead of blocking your other code from running. In this use case it isn't super important, but it is in any interactive pages, therefore JavaScript requires it.
+
+const background = document.getElementById("background");
+
+async function getBackground() {
+  const url =
+    "https://api.nasa.gov/planetary/apod?api_key=qF2xtffJ6XiUgz0UcWsXzjLHo1UZQSK41EWMegeQ";
+  // Remember, be careful with what API keys you expose
+  // Expose private API keys at your own risk
+}
+Now that we have a function with our API URL, we need to call it. When calling APIs or doing anything that has a chance of not working, we use try and catch blocks. These allow the computer to try something, and if an error occurs, then it will run a different set of code. This is crucial to preventing errors that crash your website.
+
+Within this try block, we first have to use the fetch function, this will call the API and wait for a response. Once we get a response, we will check the ok property of the response. This property is a boolean (true or false) that checks if the response was successful (response code within the 200 range). If it was a successful response, we need to do one final check to make sure the item in the url property is a image. If all that is true, then we return the url element of the json.
+
+Put this inside the getBackground function:
+
+try {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Response status: ${response.status}`);
+  }
+
+  const result = await response.json();
+  console.log(result);
+
+  if (result.media_type !== "image") {
+    console.log("APOD returned a non-image media type.");
+    return null;
+  }
+
+  return result.url;
+} catch (error) {
+  console.log(error.message);
+  return null;
+}
+Now that we have a function that returns the url of the picture, we will create a function that runs on load. Then, we will set the background-image css property of the div we made.
+
+Tip!
+In JS, you can use backticks along with ${} to dynamically add the value of variables to strings. Ex: let value="good"; console.log(Cats are ${value}!);
+
+window.onload = function () {
+  getBackground().then(function (imageUrl) {
+    if (!imageUrl) return;
+
+    console.log(imageUrl);
+
+    if (background) {
+      background.style["background-image"] = `url('${imageUrl}')`;
+    }
+  });
+};
+That should be it for the background!
+
+Time
+Now that we have a changing background, the next thing we are going to add is a clock. Before we can write the code for the clock, we need to plan where it's going to do. In the example I'm going to put it in the top right and add a glass effect. You should try to figure out how to make the time (this is a paragraph element) go in whatever position you want, but I will also give my final code. Hint: When planning the clock, you can just make a paragraph like this to adjust <p id="time">00:00:00</p>. That should go inside your background div, but you also might want to make another div for the glass effect.
+
+Final code
+HTML:
+
+<!doctype html>
+<html>
+  <head>
+    <title>Really cool thing!</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+
+  <body>
+    <div id="background">
+      <div class="gloss">
+        <p id="time">00:00:00</p>
+        <p id="weather">0% 0°F 0 MPH</p>
+      </div>
+    </div>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
+CSS:
+
+#background {
+  width: 100vw;
+  height: 100vh;
+  background-position: center;
+  background-size: cover;
+  text-align: right;
+  display: flow-root;
+}
+
+html,
+body,
+p {
+  margin: 0;
+  padding: 0;
+}
+
+p {
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+}
+
+#time {
+  font-size: 15vh;
+  margin: 1vw;
+}
+
+.gloss {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: inline-block;
+  margin: 5vw;
+}
+Now that we have an element to put the time in, we need to write code to figure out the current time. For this next section, I'm going to give you all the things you need to know, and you should try to code the time updating yourself!
+
+JavaScript has a built in object called Date. From this object, you can get things like the time. (Remember, the time is from when you created the object, not current, so you want to make a new object every time you update the time). When you run dateObject.getTime() it returns the time in Unix time. Unix time is the number of milliseconds since Jan 1st, 1970. JavaScript has functions that will automatically give you the hour, min, sec, etc, but that's not learning, so my challenge for you is to write functions to convert the Unix time into human readable time.
+
+Here are some things you should know to make clock work:
+
+How to run code every x seconds
+To run code every x secs, you need to use the setInterval function. Here is an example:
+
+setInterval(() => {
+  // code goes here
+}, 1000); // <-- this is the interval. In this case, 1000 ms or 1 sec.
+How to use date object
+To use the built in date object you need to do a few things. First, you need to create an instance of the object every time you want to check the time or date. Like this: let dateObject = new Date();
+
+Then, you will need to read the time. dateObject.getTime(); returns Unix time as a number.
+
+To account for time zones, you will need to use the dateObject.getTimezoneOffset(); function. This returns the difference between UTC (what getTime() returns) and the users computer time in minutes. If this is acting weird remember that difference is UTC - Local, and that Unix time is in milliseconds, not minutes (1000 ms / s).
+
+Remainder
+One very helpful piece of math is finding the remainder. In JavaScript that is done with the % symbol. Ex: 10 % 3 = 1. You could find the remainder of the number total millis to the number of them in a day to find millis in current day.
+
+Floor
+You may want to round down, for example if you use division to calc the time and you get something like 9.45:54.5. You can use Math.floor(); to round the number down every time.
+
+Logging data to console
+If you want to log stuff to the console for debugging reasons, you can use the console.log(); function. Ex: console.log(Some logs, and a ${variable}!);
+
+Editing a paragraph
+Now that you can log the time, you might want to actually change it on the site, to do this you can use the .innerText attribute of your time element. Ex:
+
+const time = document.getElementById("time");
+
+time.innerText = `Some nice text. Here's a ${variable}!`;
+That should be everything you need to know to make the time work. YOU GOT THIS, LOCK IN!!
+
+Weather
+For weather, I am going to do the same thing as time, give you everything you should need to do it, and you figure out how to code it!
+
+On the HTML and CSS side, the weather is almost identical to the time.
+
+Final code
+HTML:
+
+<div id="background">
+  <div class="gloss">
+    <p id="time">00:00:00</p>
+    <p id="weather">0% 0°F 0 MPH</p>
+  </div>
+</div>
+CSS:
+
+#weather {
+  font-size: 5vh;
+  margin: 1vw;
+}
+For the API, I recommend using this API, it is free and doesn't require an API key. https://open-meteo.com/. Go to the site and use the API builder to add the parts of weather you want for your website.
+
+You should know most of the concepts for the API part. Just make a new function with all the same things as the picture one, just remember to return the full json instead of just the url property.
+
+One thing you may be asking is how do we get the location of the user. Luckily for us, JavaScript has a function just for that. navigator.geolocation.getCurrentPosition(); This function takes one parameter, which is a function for it to call once it finds the location. That function should also have one parameter that takes the geolocationPosition. Inside that function you can get the longitude and latitude like this: geolocationPosition.coords.latitude and geolocationPosition.coords.longitude.
+
+Once you call the api, you should look at its response and use the data you want for your website!
+
+You got this!
+
+Add something unique!!
+Now that you have a nice homepage, add your own touch! Search online for some other APIs and add them!
+
+Quick note, PLEASE ADD A README!!
+This is super easy but required for your project to be marked as shipped. Just make a new file in the root of your repo called README.md and explain what your project is, how you made it, and how people can try it!
+
+Ready to ship?
+Finished your project for this week? Submit it to earn rewards!
+
+Ship Project
